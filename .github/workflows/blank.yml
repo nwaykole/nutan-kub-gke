@@ -1,30 +1,62 @@
-name: GKE Pods Check
+name: GKE Helm Deployment
 on: [push]
 
+env:
+  PROJECT_ID: 'dark-subject-476711-k0'
+  GAR_LOCATION: 'us-central1'
+  GAR_REPO: 'my-helm-charts' # Ensure this repo exists in GAR as "Docker" format
+  CHART_NAME: 'microservice-sample'    # The folder name where your Chart.yaml is
+  RELEASE_NAME: 'microservice-sample-release'
+
 jobs:
-  check-pods:
+  deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
-      id-token: 'write' # Required for OIDC
+      id-token: 'write'
 
     steps:
-    - uses: actions/checkout@v4
+    - name: 'Checkout code'
+      uses: actions/checkout@v4
 
     - name: 'Authenticate to Google Cloud'
       uses: 'google-github-actions/auth@v2'
       with:
-        # Use the 12-digit Project Number here, not the text ID
         workload_identity_provider: 'projects/718112077498/locations/global/workloadIdentityPools/github-pool2/providers/github-actions'
         service_account: 'github-actions-sa@dark-subject-476711-k0.iam.gserviceaccount.com'
+
+    - name: 'Set up Cloud SDK'
+      uses: 'google-github-actions/setup-gcloud@v2'
+
+    - name: 'Login to Artifact Registry'
+      run: |
+        gcloud auth configure-docker ${{ env.GAR_LOCATION }}-docker.pkg.dev
+
+    - name: 'Helm Lint and Package'
+      run: |
+        # Check for syntax errors
+        helm lint ./${{ env.CHART_NAME }}
+        # Package the chart into a .tgz file
+        helm package ./${{ env.CHART_NAME }}
+
+    - name: 'Push Chart to Artifact Registry'
+      run: |
+        # Helm treats GAR Docker repos as OCI registries
+        helm push *.tgz oci://${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}
 
     - name: 'Set up GKE credentials'
       uses: 'google-github-actions/get-gke-credentials@v2'
       with:
         cluster_name: 'nutan-test-autopilot-cluster'
-        location: 'us-central1' # e.g., us-central1
+        location: 'us-central1'
 
-    - name: 'Run kubectl'
-      run: | 
-           kubectl get pods -A
-           kubectl apply -f deploy.yaml
+    - name: 'Deploy with Helm'
+      run: |
+        # Use upgrade --install for idempotent deployments
+        # Note: We pull the version dynamically from Chart.yaml or use 'latest' logic
+        helm upgrade --install ${{ env.RELEASE_NAME }} \
+          oci://${{ env.GAR_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.CHART_NAME }} \
+          --namespace microservice-sample \
+          --create-namespace \
+          --atomic \
+          --timeout 5m
