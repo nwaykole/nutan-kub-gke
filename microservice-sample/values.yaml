@@ -12,7 +12,7 @@ service:
   port: 80
 
 ingress:
-  className: alb
+  className: gce
   scheme: internet-facing
   targetType: ip
 
