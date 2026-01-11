@@ -4,15 +4,18 @@ metadata:
   name: {{ .Release.Name }}-ingress
   namespace: {{ .Values.namespace }}
   annotations:
-    alb.ingress.kubernetes.io/scheme: {{ .Values.ingress.scheme }}
-    alb.ingress.kubernetes.io/target-type: {{ .Values.ingress.targetType }}
+    # Use the GKE-specific class annotation
+    kubernetes.io/ingress.class: "gce"
+    # GKE Autopilot creates an external LB by default, 
+    # but you can specify static IPs or managed certs here later.
 spec:
-  ingressClassName: {{ .Values.ingress.className }}
+  # Crucial: Change this from 'alb' to 'gce'
+  ingressClassName: gce 
   rules:
     - http:
         paths:
-          - path: /
-            pathType: Prefix
+          - path: /* # GKE logic: use /* for the root path
+            pathType: ImplementationSpecific  # Standard for GKE Native Ingress
             backend:
               service:
                 name: {{ .Release.Name }}-service
