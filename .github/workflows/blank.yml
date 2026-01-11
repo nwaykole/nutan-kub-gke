@@ -1,0 +1,28 @@
+name: GKE Pods Check
+on: [push]
+
+jobs:
+  check-pods:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write' # Required for OIDC
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v2'
+      with:
+        # Use the 12-digit Project Number here, not the text ID
+        workload_identity_provider: 'projects/718112077498/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+        service_account: 'github-actions-sa@dark-subject-476711-k0.iam.gserviceaccount.com'
+
+    - name: 'Set up GKE credentials'
+      uses: 'google-github-actions/get-gke-credentials@v2'
+      with:
+        cluster_name: 'nutan-test-autopilot-cluster'
+        location: 'us-central1' # e.g., us-central1
+
+    - name: 'Run kubectl'
+      run: kubectl get pods -A
