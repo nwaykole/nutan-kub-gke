@@ -3,6 +3,10 @@ kind: Service
 metadata:
   name: {{ .Release.Name }}-service
   namespace: {{ .Values.namespace }}
+  annotations:
+    # MANDATORY: This tells GKE to create a Network Endpoint Group (NEG)
+    # This allows the Load Balancer to send traffic directly to Pod IPs.
+    cloud.google.com/neg: '{"ingress": true}'
 spec:
   type: {{ .Values.service.type }}
   ports:
