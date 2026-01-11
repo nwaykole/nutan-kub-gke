@@ -1,0 +1,12 @@
+apiVersion: v2
+name: microservice-sample
+description: A Helm chart for the 2048 web application on GKE Autopilot
+
+# This is the chart type: 'application' for apps, 'library' for helper charts
+type: application
+
+# This is the internal version of the chart (increment this when you change templates)
+version: 0.1.0
+
+# This is the version of the actual application (e.g., your docker image tag)
+appVersion: "1.16.0"
