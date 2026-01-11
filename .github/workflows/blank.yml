@@ -15,7 +15,7 @@ jobs:
       uses: 'google-github-actions/auth@v2'
       with:
         # Use the 12-digit Project Number here, not the text ID
-        workload_identity_provider: 'projects/718112077498/locations/global/workloadIdentityPools/github-pool2/providers/github-provider'
+        workload_identity_provider: 'projects/718112077498/locations/global/workloadIdentityPools/github-pool2/providers/github-actions'
         service_account: 'github-actions-sa@dark-subject-476711-k0.iam.gserviceaccount.com'
 
     - name: 'Set up GKE credentials'
